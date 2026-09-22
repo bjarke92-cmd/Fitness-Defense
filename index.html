@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rep Defense Alpha 0.3</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b1020;color:#f4f7fb;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.app{max-width:980px;margin:auto;padding:12px}.stats{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}.pill,.panel{background:#151f33;border:1px solid #2d3b55;border-radius:10px}.pill{padding:7px 9px;font-size:13px}.layout{display:grid;grid-template-columns:minmax(310px,1.2fr) minmax(260px,.8fr);gap:12px}@media(max-width:720px){.layout{grid-template-columns:1fr}}.head{display:flex;justify-content:space-between;gap:8px;color:#aab6c9;font-size:12px;margin-bottom:6px}.board{position:relative;width:100%;max-width:520px;aspect-ratio:10/13;margin:auto;background:#0f192b;border:1px solid #3a4963;border-radius:12px;overflow:hidden}.pathcell{position:absolute;background:#3a4963;border:1px solid #50617d;z-index:1}.gridcell{position:absolute;z-index:30;border:1px solid rgba(255,255,255,.20);background:rgba(15,25,43,.35);padding:0;border-radius:0}.gridcell.blocked{background:rgba(180,190,205,.14)}.tower{position:absolute;z-index:15;width:22px;height:22px;transform:translate(-50%,-50%);padding:0;border:2px solid white;border-radius:5px;background:#1c304e;color:white;font-size:9px}.tower.selected{outline:3px solid #62d0ff;outline-offset:2px}.range{position:absolute;z-index:4;transform:translate(-50%,-50%);border:2px dashed #62d0ff;border-radius:50%;background:rgba(98,208,255,.06);pointer-events:none}.mob{position:absolute;z-index:10;font-size:17px;line-height:18px;pointer-events:none}.bullet{position:absolute;z-index:18;width:5px;height:5px;border-radius:50%;background:white;pointer-events:none}.panel{padding:11px;margin-bottom:10px}.row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:7px 0}.trainrow{display:grid;grid-template-columns:1fr 65px 42px;gap:6px;align-items:center;margin:6px 0}.shoprow{display:grid;grid-template-columns:25px 1fr auto;gap:6px;align-items:center;margin:7px 0}.muted{font-size:12px;color:#aab6c9}button{min-height:42px;border:1px solid #3a4963;border-radius:8px;background:#1c2942;color:white;padding:7px 9px;font-weight:650}button.primary{background:#1d5872;border-color:#3c7f9b}button:disabled{opacity:.4}input{width:65px;min-height:42px;border:1px solid #3a4963;border-radius:8px;background:#0d1627;color:white;padding:7px;font-size:16px}.hidden{display:none}.hint{padding:9px;border-radius:8px;background:#17394c;margin-top:8px}.upgrade{border:2px solid #62d0ff}.upgradegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:#aab6c9;margin:6px 0}.swatch{display:inline-block;width:10px;height:10px;margin-right:4px;border:1px solid #66748c;vertical-align:-1px}.swatch.path{background:#3a4963}.swatch.build{background:#0f192b}
+</style>
+</head>
+<body>
+<main class="app">
+<div class="stats">
+<span class="pill">❤️ <b id="life">50</b></span>
+<span class="pill">🪙 Training <b id="trainingCoins">0</b></span>
+<span class="pill">🔧 Run <b id="runCredits">110</b></span>
+<span class="pill">⭐ Meta XP <b id="metaXp">0</b></span>
+<span class="pill">🌊 <b id="waveNo">1</b></span>
+</div>
+<div class="layout">
+<section>
+<div class="head"><span>MAP 1 · ZIGZAG · 10 × 13 GRID</span><span id="status">Prepare Wave 1</span></div>
+<div id="board" class="board">
+<div id="pathLayer"></div><div id="rangeLayer"></div><div id="mobLayer"></div><div id="bulletLayer"></div><div id="towerLayer"></div><div id="gridLayer"></div>
+</div>
+<div class="legend"><span><i class="swatch path"></i>Enemy path</span><span><i class="swatch build"></i>Build area</span></div>
+<div id="placementHint" class="hint hidden"><b>Placement mode:</b> tap any free grid square outside the enemy path.</div>
+<div class="panel"><div class="row"><div><b>Basic Tower</b><div class="muted">Cost: 100 🔧</div></div><button id="buyTower" class="primary" type="button">Buy & Place</button></div></div>
+<div id="upgradePanel" class="panel upgrade hidden">
+<div class="row"><div><b>🎯 Selected Tower #<span id="selectedId">1</span></b><div class="muted">Upgrades apply only to this tower.</div></div><button id="closeUpgrade" type="button">✕</button></div>
+<div class="upgradegrid"><button id="upgradeDamage" type="button">⚔️ Damage<br><b id="damageValue">1</b><br>25 🔧</button><button id="upgradeSpeed" type="button">⚡ Speed<br><b id="speedValue">1.0×</b><br>25 🔧</button><button id="upgradeRange" type="button">📏 Range<br><b id="rangeValue">3.0</b><br>25 🔧</button></div>
+</div>
+</section>
+<aside>
+<div class="panel"><b>1 · Training</b><div class="muted">Training Coins persist between runs.</div>
+<div class="trainrow"><label>Push-up · 1 🪙</label><input id="push" type="number" min="0" value="0"><button type="button" class="addTraining" data-kind="push">+</button></div>
+<div class="trainrow"><label>Pull-up · 2 🪙</label><input id="pull" type="number" min="0" value="0"><button type="button" class="addTraining" data-kind="pull">+</button></div>
+<div class="trainrow"><label>Squat · 0.5 🪙</label><input id="squat" type="number" min="0" value="0"><button type="button" class="addTraining" data-kind="squat">+</button></div>
+</div>
+<div class="panel"><b>2 · Training Enemies</b><div id="enemyShop"></div><div class="muted">Added to next wave: <b id="extraEnemies">none</b></div></div>
+<div class="panel"><div class="row"><b>Wave <span id="waveLabel">1</span></b><span id="standardEnemies"></span></div><button id="startWave" class="primary" type="button" style="width:100%">▶ START WAVE</button><button id="newRun" type="button" style="width:100%;margin-top:6px">New Run</button><p id="message" class="muted">Buy your first tower, then choose where to place it.</p></div>
+</aside>
+</div>
+</main>
+<script>
+(function(){
+"use strict";
+function byId(id){return document.getElementById(id);}
+var COLS=10, ROWS=13;
+var state={life:50,training:0,credits:110,xp:0,wave:1,towers:[],selected:null,placing:false,extras:[],running:false};
+try{var saved=JSON.parse(localStorage.getItem("repDefenseAlpha03")||"{}");state.training=Number(saved.training)||0;state.xp=Number(saved.xp)||0;}catch(err){}
+var exerciseValue={push:1,pull:2,squat:0.5};
+var enemyTypes=[
+{id:"circle",shape:"●",name:"Circle",cost:5,hp:3,life:1,reward:5,speed:1},
+{id:"triangle",shape:"▲",name:"Triangle",cost:10,hp:7,life:2,reward:9,speed:1.05},
+{id:"square",shape:"■",name:"Square",cost:20,hp:15,life:4,reward:16,speed:0.8}
+];
+var blocked={};
+function cellKey(c,r){return c+"_"+r;}
+function vertical(c,a,b){for(var r=a;r<=b;r++){blocked[cellKey(c,r)]=true;}}
+function horizontal(r,a,b){for(var c=a;c<=b;c++){blocked[cellKey(c,r)]=true;}}
+vertical(5,0,2); horizontal(2,2,5); vertical(2,2,6); horizontal(6,2,7); vertical(7,6,9); horizontal(9,4,7); vertical(4,9,12);
+var route=[[5.5,0],[5.5,2.5],[2.5,2.5],[2.5,6.5],[7.5,6.5],[7.5,9.5],[4.5,9.5],[4.5,13]];
+var active=[];
+function boardSize(){var rect=byId("board").getBoundingClientRect();return{w:rect.width,h:rect.height,cw:rect.width/COLS,ch:rect.height/ROWS};}
+function save(){try{localStorage.setItem("repDefenseAlpha03",JSON.stringify({training:state.training,xp:state.xp}));}catch(err){}}
+function getEnemy(id){for(var i=0;i<enemyTypes.length;i++){if(enemyTypes[i].id===id)return enemyTypes[i];}return enemyTypes[0];}
+function standardWave(){var list=[],count=2+Math.ceil(state.wave*0.7);for(var i=0;i<count;i++){if(state.wave>=6&&i%5===4)list.push("square");else if(state.wave>=3&&i%4===3)list.push("triangle");else list.push("circle");}return list;}
+function drawMap(){var d=boardSize(),layer=byId("pathLayer");layer.innerHTML="";for(var k in blocked){if(!blocked.hasOwnProperty(k))continue;var parts=k.split("_"),c=Number(parts[0]),r=Number(parts[1]),cell=document.createElement("div");cell.className="pathcell";cell.style.left=(c*d.cw)+"px";cell.style.top=(r*d.ch)+"px";cell.style.width=d.cw+"px";cell.style.height=d.ch+"px";layer.appendChild(cell);}}
+function occupied(c,r){for(var i=0;i<state.towers.length;i++){if(state.towers[i].c===c&&state.towers[i].r===r)return true;}return false;}
+function drawGrid(show){var layer=byId("gridLayer");layer.innerHTML="";if(!show)return;var d=boardSize();for(var r=0;r<ROWS;r++){for(var c=0;c<COLS;c++){(function(cc,rr){var cell=document.createElement("button"),notAllowed=!!blocked[cellKey(cc,rr)]||occupied(cc,rr);cell.type="button";cell.className="gridcell"+(notAllowed?" blocked":"");cell.style.left=(cc*d.cw)+"px";cell.style.top=(rr*d.ch)+"px";cell.style.width=d.cw+"px";cell.style.height=d.ch+"px";if(!notAllowed){cell.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();placeTower(cc,rr);});}layer.appendChild(cell);})(c,r);}}}
+function drawTowers(){var d=boardSize(),layer=byId("towerLayer");layer.innerHTML="";for(var i=0;i<state.towers.length;i++){(function(t){t.x=(t.c+0.5)*d.cw;t.y=(t.r+0.5)*d.ch;var b=document.createElement("button");b.type="button";b.className="tower"+(state.selected===t?" selected":"");b.textContent="T";b.style.left=t.x+"px";b.style.top=t.y+"px";b.addEventListener("click",function(e){e.preventDefault();e.stopPropagation();selectTower(t);});layer.appendChild(b);})(state.towers[i]);}}
+function drawRange(){var layer=byId("rangeLayer");layer.innerHTML="";if(!state.selected)return;var d=boardSize(),radius=state.selected.range*d.cw,circle=document.createElement("div");circle.className="range";circle.style.left=state.selected.x+"px";circle.style.top=state.selected.y+"px";circle.style.width=(radius*2)+"px";circle.style.height=(radius*2)+"px";layer.appendChild(circle);}
+function render(){byId("life").textContent=state.life;byId("trainingCoins").textContent=state.training;byId("runCredits").textContent=state.credits;byId("metaXp").textContent=state.xp;byId("waveNo").textContent=state.wave;byId("waveLabel").textContent=state.wave;var std=standardWave(),symbols=[];for(var i=0;i<std.length;i++)symbols.push(getEnemy(std[i]).shape);byId("standardEnemies").textContent=symbols.join(" ");var counts={},extra=[];for(i=0;i<state.extras.length;i++)counts[state.extras[i]]=(counts[state.extras[i]]||0)+1;for(i=0;i<enemyTypes.length;i++){if(counts[enemyTypes[i].id])extra.push(counts[enemyTypes[i].id]+"×"+enemyTypes[i].shape);}byId("extraEnemies").textContent=extra.length?extra.join(" "):"none";byId("buyTower").disabled=state.running||state.placing||state.credits<100;byId("startWave").disabled=state.running||state.placing||state.towers.length===0;if(state.selected){byId("selectedId").textContent=state.selected.id;byId("damageValue").textContent=state.selected.damage;byId("speedValue").textContent=state.selected.rate.toFixed(1)+"×";byId("rangeValue").textContent=state.selected.range.toFixed(1);}drawTowers();drawRange();if(state.placing)drawGrid(true);save();}
+function selectTower(t){state.selected=t;byId("upgradePanel").classList.remove("hidden");render();}
+function placeTower(c,r){if(!state.placing||blocked[cellKey(c,r)]||occupied(c,r))return;state.credits-=100;var t={id:state.towers.length+1,c:c,r:r,x:0,y:0,damage:1,rate:1,range:3,last:0};state.towers.push(t);state.selected=t;state.placing=false;drawGrid(false);byId("placementHint").classList.add("hidden");byId("upgradePanel").classList.remove("hidden");byId("message").textContent="Tower #"+t.id+" placed. Tap it at any time to select it.";render();}
+byId("buyTower").addEventListener("click",function(){if(state.credits<100||state.running)return;state.placing=true;state.selected=null;byId("upgradePanel").classList.add("hidden");byId("placementHint").classList.remove("hidden");byId("message").textContent="Placement mode active. Tap a free grid square.";drawGrid(true);render();});
+byId("closeUpgrade").addEventListener("click",function(){state.selected=null;byId("upgradePanel").classList.add("hidden");render();});
+byId("upgradeDamage").addEventListener("click",function(){if(state.selected&&state.credits>=25){state.credits-=25;state.selected.damage+=1;render();}});
+byId("upgradeSpeed").addEventListener("click",function(){if(state.selected&&state.credits>=25){state.credits-=25;state.selected.rate=Number((state.selected.rate+0.2).toFixed(1));render();}});
+byId("upgradeRange").addEventListener("click",function(){if(state.selected&&state.credits>=25){state.credits-=25;state.selected.range+=0.5;render();}});
+var trainingButtons=document.querySelectorAll(".addTraining");for(var tb=0;tb<trainingButtons.length;tb++){trainingButtons[tb].addEventListener("click",function(){var kind=this.getAttribute("data-kind"),input=byId(kind),amount=Math.max(0,Math.min(1000,Number(input.value)||0));if(!amount){byId("message").textContent="Enter your reps first.";return;}state.training+=amount*exerciseValue[kind];input.value=0;render();});}
+for(var et=0;et<enemyTypes.length;et++){(function(m){var row=document.createElement("div");row.className="shoprow";var s=document.createElement("span");s.textContent=m.shape;var info=document.createElement("span");info.innerHTML="<b>"+m.name+"</b><br><span class='muted'>"+m.hp+" HP · +"+m.reward+" 🔧 · +"+m.cost+" ⭐</span>";var btn=document.createElement("button");btn.type="button";btn.textContent=m.cost+" 🪙";btn.addEventListener("click",function(){if(state.training<m.cost){byId("message").textContent="Not enough Training Coins.";return;}state.training-=m.cost;state.extras.push(m.id);render();});row.appendChild(s);row.appendChild(info);row.appendChild(btn);byId("enemyShop").appendChild(row);})(enemyTypes[et]);}
+function routePoint(seg,u){var d=boardSize(),a=route[seg],b=route[Math.min(seg+1,route.length-1)];return{x:(a[0]+(b[0]-a[0])*u)*d.cw,y:(a[1]+(b[1]-a[1])*u)*d.ch};}
+function spawn(id,isTraining){var type=getEnemy(id),node=document.createElement("div");node.className="mob";node.textContent=type.shape;node.style.color=isTraining?"#54d39b":"#e7edf7";byId("mobLayer").appendChild(node);var unit={node:node,type:type,hp:type.hp,seg:0,u:0,isTraining:isTraining,dead:false};active.push(unit);return new Promise(function(resolve){var last=performance.now();function move(now){if(unit.dead)return;var dt=Math.min(40,now-last);last=now;if(unit.hp<=0){unit.dead=true;state.credits+=isTraining?type.reward:Math.max(1,Math.ceil(type.reward*0.35));if(isTraining)state.xp+=type.cost;if(node.parentNode)node.parentNode.removeChild(node);render();resolve("kill");return;}unit.u+=0.0065*type.speed*dt/16;if(unit.u>=1){unit.u=0;unit.seg+=1;if(unit.seg>=route.length-1){unit.dead=true;state.life=Math.max(0,state.life-type.life);if(node.parentNode)node.parentNode.removeChild(node);render();resolve("escape");return;}}var p=routePoint(unit.seg,unit.u);node.style.left=(p.x-8)+"px";node.style.top=(p.y-8)+"px";requestAnimationFrame(move);}requestAnimationFrame(move);});}
+function fire(t,u){var boardRect=byId("board").getBoundingClientRect(),mr=u.node.getBoundingClientRect(),tx=mr.left-boardRect.left+8,ty=mr.top-boardRect.top+8,b=document.createElement("div");b.className="bullet";b.style.left=t.x+"px";b.style.top=t.y+"px";byId("bulletLayer").appendChild(b);var q=0;function fly(){q+=0.25;b.style.left=(t.x+(tx-t.x)*q)+"px";b.style.top=(t.y+(ty-t.y)*q)+"px";if(q>=1){if(b.parentNode)b.parentNode.removeChild(b);if(!u.dead)u.hp-=t.damage;return;}requestAnimationFrame(fly);}requestAnimationFrame(fly);}
+setInterval(function(){if(!state.running)return;var boardRect=byId("board").getBoundingClientRect(),d=boardSize(),now=performance.now();for(var ti=0;ti<state.towers.length;ti++){var t=state.towers[ti];if(now-t.last<650/t.rate)continue;var best=null,bestProgress=-1;for(var ai=0;ai<active.length;ai++){var u=active[ai];if(u.dead||!u.node.parentNode)continue;var mr=u.node.getBoundingClientRect(),x=mr.left-boardRect.left+8,y=mr.top-boardRect.top+8,dist=Math.hypot(x-t.x,y-t.y),progress=u.seg+u.u;if(dist<=t.range*d.cw&&progress>bestProgress){best=u;bestProgress=progress;}}if(best){t.last=now;fire(t,best);}}},80);
+function delay(ms){return new Promise(function(resolve){setTimeout(resolve,ms);});}
+async function runWave(){if(state.running||state.placing||state.towers.length===0)return;state.running=true;byId("status").textContent="Wave running";var seq=[],std=standardWave(),i;for(i=0;i<std.length;i++)seq.push({id:std[i],training:false});for(i=0;i<state.extras.length;i++)seq.push({id:state.extras[i],training:true});state.extras=[];render();var jobs=[];for(i=0;i<seq.length;i++){jobs.push(spawn(seq[i].id,seq[i].training));await delay(570);}var results=await Promise.all(jobs);state.running=false;if(state.life<=0){byId("status").textContent="GAME OVER";byId("message").textContent="Game Over on Wave "+state.wave+". Training Coins and Meta XP are saved.";}else{var kills=0;for(i=0;i<results.length;i++)if(results[i]==="kill")kills++;byId("message").textContent="Wave "+state.wave+" cleared · "+kills+" kills.";state.wave+=1;byId("status").textContent="Prepare Wave "+state.wave;}render();}
+byId("startWave").addEventListener("click",runWave);
+byId("newRun").addEventListener("click",function(){for(var i=0;i<active.length;i++){active[i].dead=true;if(active[i].node.parentNode)active[i].node.parentNode.removeChild(active[i].node);}active=[];byId("mobLayer").innerHTML="";byId("bulletLayer").innerHTML="";state.life=50;state.credits=110;state.wave=1;state.towers=[];state.selected=null;state.placing=false;state.extras=[];state.running=false;byId("upgradePanel").classList.add("hidden");byId("placementHint").classList.add("hidden");drawGrid(false);byId("status").textContent="Prepare Wave 1";byId("message").textContent="New run. Training Coins and Meta XP were kept.";render();});
+window.addEventListener("resize",function(){drawMap();render();});
+drawMap();render();
+})();
+</script>
+</body>
+</html>
